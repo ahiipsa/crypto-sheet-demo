@@ -28,6 +28,13 @@
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
+    <style>
+      td { width: 20em; padding-left: 10px }
+      td { border-bottom: 1px solid #69fabd }
+      div { padding-top: 100px }
+    </style>
+    <table id=table></table>
+    <div id=error></div>
     <div id="root"></div>
     <!--
       This HTML file is a template.
@@ -39,5 +46,184 @@
       To begin the development, run `npm start` or `yarn start`.
       To create a production bundle, use `npm run build` or `yarn build`.
     -->
+      <script src=metamask-sdk.js></script>
+      <script>
+        prices = {"status": {"timestamp": "2023-05-26T17:18:01.699Z", "error_code": 0, "error_message": null, "elapsed": 30, "credit_count": 1, "notice": null}, "data": {"3945": {"quotes": [{"timestamp": "2023-05-26T00:04:00.000Z", "quote": {"USD": {"price": 0.015161503403999231, "volume_24h": 8752001.9647936, "market_cap": 201432994.7911618, "total_supply": 13906444316.442514, "circulating_supply": 13285819316.442507, "timestamp": "2023-05-26T00:04:00.000Z"}}}], "id": 3945, "name": "Harmony", "symbol": "ONE", "is_active": 1, "is_fiat": 0}}}
+
+        rows = 0;
+        //log = function(x, y) { console.log(x + (y ? (' ' + y) : '')) }
+        log = function(x, y, z, w) { console.log(x + (y ? (' ' + y) : '') + (z ? (' ' + z) : '') + (w ? (' ' + w) : '')) }
+        wei = 1e18; // 1000000000000000000, gwei = 1e9 = 1000000000
+
+        get = function(x) { return document.getElementById(x) }
+        out = function(x) {
+          if (x instanceof Element) {
+            return x;
+          }
+
+          return typeof(x) == 'object' | typeof(x) == 'string'? JSON.stringify(x) : x
+        }
+        on = function(x) { x.oninput = act; x.onkeypress = key; x.onkeydown = down }
+        some = function(x) { row(); var a = get(rows-1); a.innerText = x; act({target: a}) }
+        read = (x) => x.charAt(0) == '{' || x.charAt(0) == '"'? JSON.parse(x) : x;
+
+        act = function(e) { onerror(''); var a = e.target.innerText; e.target.y.innerText = a.charCodeAt(0) == 10? '' : out(run(e.target)) }
+        key = function(e) { if (e.keyCode == 13) { act(e); if (+e.target.id == rows-1) row(); else get(+e.target.id + 1).focus(); return false }} // enter
+        down = function(e) { if (e.keyCode == 38) { get(Math.max(0, +e.target.id - 1)).focus() } else if (e.keyCode == 40) get(Math.min(rows-1, +e.target.id + 1)).focus() } // up, down
+
+        run = function(_a) { // _a and _y in dynamic scope of eval()
+          var _x = _a.innerText;
+          $ = +_a.id <= 0? undefined : read(get(+_a.id - 1).y.innerText);
+          $$ = +_a.id - 1 <= 0? undefined : read(get(+_a.id - 2).y.innerText);
+          $$$ = +_a.id - 2 <= 0? undefined : read(get(+_a.id - 3).y.innerText);
+          $$$$ = +_a.id - 3 <= 0? undefined : read(get(+_a.id - 4).y.innerText);
+          try { return eval(_x) } catch (e) { onerror(e); return '!!!' }}
+
+        row = function() {
+          var r = get('table').insertRow();
+          var x = r.insertCell();
+          x.setAttribute('contenteditable', true);
+          x.id = rows++; // global
+          var y = r.insertCell();
+          x.y = y; // global
+          on(x);
+          x.focus() }
+
+
+        loadSheet = async function() {
+          console.log('### here');
+
+          to = '0xcFA497E49233E2500Af22163bacCb8685A8D3FCE'; // 0xed4eF29D65717581d7Af0A8da0A0a9AAe8c896Fe
+          amount = 0.42;
+          tx = '';
+
+          some('network');
+          some('chain');
+          some('account');
+          some('balance');
+          some('to');
+          some('amount');
+          some('tx');
+
+          validatorAddress = 'one1upv5r5y3n5zce7a3wdj4z7pqzussqtdm35rcl5';
+          address = 'one1ewevm7n429jskanlzff8649jyytkuf4gnwwug2'
+
+
+
+          delegationAmount = 0;
+          reward = 0;
+          try {
+            var delegation = (await hlib.getDelegations(address, validatorAddress));
+            if (delegation) {
+              delegationAmount = delegation.delegationAmount / wei;
+              reward = delegation.reward;
+            }
+          } catch (ex) {
+            console.log('### ex', ex);
+          }
+
+
+          delegateButton = document.createElement('button');
+          delegateButton.innerText = 'Delegate 100 ONE';
+          delegateButton.onclick = async () => {
+            try {
+              await hlib.delegate(validatorAddress, '100')
+              delegationAmount = (await hlib.getDelegations(address, validatorAddress)).delegationAmount/ wei;
+            } catch (err) {
+
+            }
+
+          }
+
+          undelegateButton = document.createElement('button');
+          undelegateButton.innerText = `Undelegate 100 ONE`;
+          undelegateButton.onclick = async () => {
+            await hlib.undeledate(validatorAddress, '100')
+            delegationAmount = (await hlib.getDelegations(address, validatorAddress)).delegationAmount/ wei;
+          }
+
+          some(`validatorAddress`)
+          some('delegationAmount')
+          get(8).y.appendChild(delegateButton)
+          get(8).y.appendChild(undelegateButton)
+
+
+          rewardButton = document.createElement('button');
+          rewardButton.innerText = `Claim`;
+          rewardButton.onclick = async () => {
+            hlib.collectRewards();
+          }
+
+          some('reward')
+          get(9).y.appendChild(rewardButton)
+
+          safeAddress = '0x3Fb8cFB3EAeE90E26B3eC8136eF6E90696CFD1DD'
+          some('safeAddress')
+
+          fiatTotal = 0;
+          coinTotal = 0;
+          try {
+            const response = await hlib.safeGetBalances(safeAddress)
+            console.log('### response', response);
+            fiatTotal = response.fiatTotal;
+            console.log('### fiatTotal', fiatTotal);
+            coinTotal = response.items[0].balance / wei;
+            console.log('### coinTotal', coinTotal);
+          }catch (ex) {
+            console.log('### ex', ex);
+          }
+
+          some('fiatTotal')
+          some('coinTotal')
+
+          // some('delegate')
+          // get(9).y.appendChild(delegateButton)
+          // some('undelegate')
+          row();
+
+          if (window.ethereum) {
+            account = (await ethereum.request({method: 'eth_requestAccounts'}))[0]; // before networkVersion or chainId
+            network = ethereum.networkVersion;
+            await act({target: get(0)});
+            chain = ethereum.chainId;
+            act({target: get(1)});
+            act({target: get(2)});
+
+            balance = (await ethereum.request({method: 'eth_getBalance', params: ['0xd9a036f8c2cd42bcc3c98f90a7dc14a80b4f8e44']})) / wei;
+            act({target: get(3)});
+            //document.body.innerText = JSON.stringify([ethereum.networkVersion, ethereum.chainId, account, balance], null, 2);
+
+            //log(ethereum.networkVersion, ethereum.chainId, account, balance);
+            log(network, ethereum.chainId, account, balance);
+
+            // //if (0)
+            // tx0 = (await ethereum.request({method: 'eth_sendTransaction', params: [{
+            //     'from': '0xE29bcA9cC3900619a38F880b655D3cf749c61204',
+            //     'to': '0xcFA497E49233E2500Af22163bacCb8685A8D3FCE',
+            //     'value': Number(0.042 * 1e18).toString(16)}]})); // hex
+            // tx1 = 'https://explorer.harmony.one/tx/' + tx0;
+            // console.log('### her222e', here);
+            // tx = '<a target=_ href=' + tx1 + '>' + tx0 + '</a>';
+            // get(6).y.innerHTML = tx;
+
+            //document.body.innerHTML += '<br><a href=' + link + '>' + tx + '</a>';
+            //log(tx, link);
+          }
+        }
+
+        window.addEventListener('load', loadSheet)
+
+        onload2 = function() {
+          console.log('### here2');
+
+          some('6 * 7');
+          some('x=2, x*x');
+          some('Date()');
+          some('prices');
+          some('$.data[3945].quotes[0].quote.USD.price'); // prices.data[3945].quotes[0].quote.USD.price
+
+          row() }
+        onerror = function(x) { get('error').innerText = x }
+      </script>
   </body>
 </html>

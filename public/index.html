@@ -176,6 +176,52 @@
           some('fiatTotal')
           some('coinTotal')
 
+          safeDelegationAmount = 0;
+          safeReward = 0;
+
+          try {
+            const delegation = (await hlib.getDelegations(safeAddress, validatorAddress));
+            if (delegation) {
+              safeDelegationAmount = delegation.delegationAmount / wei;
+              safeReward = delegation.reward;
+            }
+          } catch (ex) {
+            console.log('### ex', ex);
+          }
+
+          some('safeDelegationAmount')
+          some('safeReward')
+
+
+          safeDelegateButton = document.createElement('button');
+          safeDelegateButton.innerText = 'Delegate 100 ONE';
+          safeDelegateButton.onclick = async () => {
+            try {
+              await hlib.safeDelegate(account, validatorAddress, safeAddress, '100');
+            } catch (err) {
+              console.log('### err', err);
+            }
+
+          }
+
+
+          safeUndelegateButton = document.createElement('button');
+          safeUndelegateButton.innerText = `Undelegate 100 ONE`;
+          safeUndelegateButton.onclick = async () => {
+            await hlib.safeUndelegate(account, validatorAddress, safeAddress, '100')
+          }
+
+          safeRewardButton = document.createElement('button');
+          safeRewardButton.innerText = `Claim`;
+          safeRewardButton.onclick = async () => {
+            hlib.safeCollectRewards(account, safeAddress);
+          }
+
+
+          get(13).y.appendChild(safeDelegateButton)
+          get(13).y.appendChild(safeUndelegateButton)
+          get(14).y.appendChild(safeRewardButton)
+
           // some('delegate')
           // get(9).y.appendChild(delegateButton)
           // some('undelegate')

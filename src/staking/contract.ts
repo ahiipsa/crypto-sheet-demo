@@ -150,7 +150,7 @@ export class StakingContract {
 
   public collectRewardsEncodeABI(delegatorAddress: string) {
     const delegatorAddressHex = toChecksumAddress(delegatorAddress);
-    return this.contract.methods.CollectRewards(delegatorAddressHex)
+    return this.contract.methods.CollectRewards(delegatorAddressHex).encodeABI();
   }
 
   /**

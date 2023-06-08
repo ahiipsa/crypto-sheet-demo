@@ -214,7 +214,12 @@
           safeRewardButton = document.createElement('button');
           safeRewardButton.innerText = `Claim`;
           safeRewardButton.onclick = async () => {
-            hlib.safeCollectRewards(account, safeAddress);
+            try {
+              hlib.safeCollectRewards(account, safeAddress);
+              
+            } catch (ex) {
+              console.log('### ex', ex);
+            }
           }
 
 
